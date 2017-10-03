@@ -20,7 +20,6 @@ public class App {
         Long start;
         Long end;
 
-
         app.showTaskHeader("NO THREADS");
         start = System.nanoTime();
         app.getTempsNoThread(jsonCityList);
@@ -34,7 +33,6 @@ public class App {
         end = System.nanoTime();
         app.showInfo(app, jsonCityList, start, end);
         app.clearCityData();
-
 
         app.showTaskHeader("BY FUTURES");
         start = System.nanoTime();
@@ -77,20 +75,7 @@ public class App {
         for (Thread nextThread : threads) {
             this.cityData.put(((WeatherGetterThread) nextThread).getCity().getName(), roundToDouble(Double.valueOf(((WeatherGetterThread) nextThread).getTemperature()), 2 ));
         }
-/*
-        for (Thread nextThread : threads) {
-            if (nextThread.isAlive()) {
-                try {
-                    synchronized (nextThread) {
-                        nextThread.wait();
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            this.cityData.put(((WeatherGetterThread) nextThread).getCity().getName(), roundToDouble(Double.valueOf(((WeatherGetterThread) nextThread).getTemperature()), 2 ));
-        }
-*/
+
     }
 
     private void getTempsByFutures(List<City> jsonCityList) {
