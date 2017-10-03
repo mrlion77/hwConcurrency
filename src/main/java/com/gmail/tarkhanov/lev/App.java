@@ -3,6 +3,7 @@ package com.gmail.tarkhanov.lev;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.concurrent.*;
 
 /**
  * Created by Lev Tarkhanov on 29.09.2017.
@@ -19,13 +20,13 @@ public class App {
         Long start;
         Long end;
 
+
         app.showTaskHeader("NO THREADS");
         start = System.nanoTime();
         app.getTempsNoThread(jsonCityList);
         end = System.nanoTime();
         app.showInfo(app, jsonCityList, start, end);
         app.clearCityData();
-        System.out.println("\n");
 
         app.showTaskHeader("BY THREADS");
         start = System.nanoTime();
@@ -34,11 +35,19 @@ public class App {
         app.showInfo(app, jsonCityList, start, end);
         app.clearCityData();
 
+
+        app.showTaskHeader("BY FUTURES");
+        start = System.nanoTime();
+        app.getTempsByFutures(jsonCityList);
+        end = System.nanoTime();
+        app.showInfo(app, jsonCityList, start, end);
+        app.clearCityData();
+
     }
 
 
-    private void getTempsNoThread(List<City> cityList) {
-        for (City city : cityList) {
+    private void getTempsNoThread(List<City> jsonCityList) {
+        for (City city : jsonCityList) {
             WeatherGetter wg = new WeatherGetter();
             Float temperature = 0.0F;
             try {
@@ -84,6 +93,43 @@ public class App {
 */
     }
 
+    private void getTempsByFutures(List<City> jsonCityList) {
+        ExecutorService executor = Executors.newFixedThreadPool(4);
+        for (City city : jsonCityList) {
+            Callable<Float> task = () -> {
+                WeatherGetter wg = new WeatherGetter();
+                Float temperature = 0.0F;
+                try {
+                    temperature = wg.getTemperatureByCityCode(city.getId());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                return temperature;
+            };
+            Future<Float> future = executor.submit(task);
+            try {
+                this.cityData.put(city.getName(), roundToDouble(Double.valueOf(future.get()), 2));
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+        }
+        try {
+            executor.shutdown();
+            executor.awaitTermination(5, TimeUnit.SECONDS);
+        }
+        catch (InterruptedException e) {
+            System.err.println("tasks interrupted");
+        }
+        finally {
+            if (!executor.isTerminated()) {
+                System.err.println("cancel non-finished tasks");
+            }
+            executor.shutdownNow();
+        }
+    }
+
 
     private void clearCityData() {
         this.cityData.clear();
@@ -117,6 +163,7 @@ public class App {
         System.out.println("Average temperature: " + getAverageTemperature(app, jsonCityList));
         System.out.println("Cities proceeded: " + jsonCityList.size());
         System.out.println("Time spent: " + getTimeSpent(start, end));
+        System.out.println("\n");
     }
 
 
