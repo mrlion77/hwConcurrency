@@ -78,6 +78,7 @@ public class App {
 
     }
 
+
     private void getTempsByFutures(List<City> jsonCityList) {
         ExecutorService executor = Executors.newFixedThreadPool(4);
         for (City city : jsonCityList) {
